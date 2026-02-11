@@ -2,12 +2,7 @@
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
-#include <stdio.h>
-
-typedef struct {
-    SDL_Window* window;
-    SDL_Renderer* renderer;
-} AppState;
+#include "app_state.h"
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
     AppState* state = SDL_calloc(1, sizeof(AppState));
