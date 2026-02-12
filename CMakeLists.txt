@@ -10,7 +10,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 add_subdirectory(vendored/SDL EXCLUDE_FROM_ALL)
 
 # Create your game executable target as usual
-add_executable(MusicVisualizer src/main.c)
+add_executable(MusicVisualizer src/main.c src/visualizer.c src/audio_utils.c)
 
 target_include_directories(MusicVisualizer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 

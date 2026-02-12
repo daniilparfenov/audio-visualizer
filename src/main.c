@@ -2,7 +2,9 @@
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+
 #include "app_state.h"
+#include "visualizer.h"
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
     AppState* state = SDL_calloc(1, sizeof(AppState));
@@ -25,14 +27,13 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
 
     // Load .wav file
     const char* wav_path = "assets/wav_sample1.wav";
-    SDL_AudioSpec wav_spec;
-    if (!SDL_LoadWAV(wav_path, &wav_spec, &state->wav_data, &state->wav_data_len)) {
+    if (!SDL_LoadWAV(wav_path, &state->wav_spec, &state->wav_data, &state->wav_data_len)) {
         SDL_Log("Couldn't load .wav file: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
 
     // Create AudioStream
-    state->stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &wav_spec, NULL, NULL);
+    state->stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &state->wav_spec, NULL, NULL);
     if (!state->stream) {
         SDL_Log("Couldn't create audio stream: %s", SDL_GetError());
         return SDL_APP_FAILURE;
@@ -57,24 +58,13 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event) {
 
 SDL_AppResult SDL_AppIterate(void* appstate) {
     AppState* state = (AppState*)appstate;
-    const char* message = "Hello World!";
-    int w = 0, h = 0;
-    float x, y;
-    const float scale = 4.0f;
-
-    // Center the message and scale it up
-    SDL_GetRenderOutputSize(state->renderer, &w, &h);
-    SDL_SetRenderScale(state->renderer, scale, scale);
-    x = ((w / scale) - SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE * SDL_strlen(message)) / 2;
-    y = ((h / scale) - SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE) / 2;
 
     // Clear the screen with black color
     SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255);
     SDL_RenderClear(state->renderer);
 
-    // Draw the message
-    SDL_SetRenderDrawColor(state->renderer, 255, 255, 255, 255);
-    SDL_RenderDebugText(state->renderer, x, y, message);
+    DrawWaveform(state);
+
     SDL_RenderPresent(state->renderer);
 
     return SDL_APP_CONTINUE;
