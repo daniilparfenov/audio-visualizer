@@ -4,7 +4,10 @@
 #include <SDL3/SDL_main.h>
 
 #include "app_state.h"
+#include "audio_utils.h"
 #include "visualizer.h"
+
+#define RING_BUFFER_SIZE 2048
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
     AppState* state = SDL_calloc(1, sizeof(AppState));
@@ -27,20 +30,47 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
 
     // Load .wav file
     const char* wav_path = "assets/wav_sample1.wav";
-    if (!SDL_LoadWAV(wav_path, &state->wav_spec, &state->wav_data, &state->wav_data_len)) {
+    SDL_AudioSpec wav_spec;
+    Uint8* wav_data = NULL;
+    Uint32 wav_data_len = 0;
+    if (!SDL_LoadWAV(wav_path, &wav_spec, &wav_data, &wav_data_len)) {
         SDL_Log("Couldn't load .wav file: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
 
-    // Create AudioStream
-    state->stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &state->wav_spec, NULL, NULL);
+    // Convert audio to floats
+    SDL_AudioSpec target_spec = wav_spec;
+    target_spec.format = SDL_AUDIO_F32;
+
+    Uint8* converted_data = NULL;
+    int converted_len = 0;
+    if (!SDL_ConvertAudioSamples(&wav_spec, wav_data, wav_data_len, &target_spec, &converted_data, &converted_len)) {
+        SDL_Log("Failed to convert audio samples: %s", SDL_GetError());
+        SDL_free(wav_data);
+        return SDL_APP_FAILURE;
+    }
+
+    // Store converted data in our AppState
+    state->samples = (float*)converted_data;
+    state->samples_count = converted_len / sizeof(float);  // Total floats (samples * channels)
+    state->sample_rate = target_spec.freq;
+    state->channels = target_spec.channels;
+    state->cur_sample_idx = 0;
+
+    // Free original raw data
+    SDL_free(wav_data);
+
+    // Setup Ring Buffer
+    state->ring_buffer_len = RING_BUFFER_SIZE;
+    state->ring_buffer = SDL_calloc(state->ring_buffer_len, sizeof(float));
+    state->ring_buffer_idx = 0;
+
+    // Create AudioStream that mathes converted format (F32)
+    state->stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &target_spec, NULL, NULL);
     if (!state->stream) {
         SDL_Log("Couldn't create audio stream: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
-
-    // Put audio into stream
-    SDL_PutAudioStreamData(state->stream, state->wav_data, state->wav_data_len);
 
     // Resume audio (because SDL starts the device paused)
     SDL_ResumeAudioStreamDevice(state->stream);
@@ -63,7 +93,7 @@ SDL_AppResult SDL_AppIterate(void* appstate) {
     SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255);
     SDL_RenderClear(state->renderer);
 
-    DrawWaveform(state);
+    FeedAudio(state);
 
     SDL_RenderPresent(state->renderer);
 
@@ -77,8 +107,20 @@ void SDL_AppQuit(void* appstate, SDL_AppResult result) {
             SDL_DestroyAudioStream(state->stream);
         }
 
-        if (state->wav_data) {
-            SDL_free(state->wav_data);
+        if (state->samples) {
+            SDL_free(state->samples);
+        }
+
+        if (state->ring_buffer) {
+            SDL_free(state->ring_buffer);
+        }
+
+        if (state->renderer) {
+            SDL_DestroyRenderer(state->renderer);
+        }
+
+        if (state->window) {
+            SDL_DestroyWindow(state->window);
         }
 
         SDL_free(state);
