@@ -5,7 +5,8 @@ float GetSampleNormalized(AppState* state, Uint32 sample_idx) {
         return 0.0f;
     }
 
-    if (SDL_AUDIO_BYTESIZE(state->wav_spec.format)) {
+    if (SDL_AUDIO_BYTESIZE(state->wav_spec.format) == 2) {
+        // Odd samples are unaligned by 2 bytes so we can't read them properly
         if (sample_idx & 1)
             sample_idx--;
 
