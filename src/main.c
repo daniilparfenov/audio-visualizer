@@ -7,7 +7,7 @@
 #include "audio_utils.h"
 #include "visualizer.h"
 
-#define RING_BUFFER_SIZE 2048
+#define RING_BUFFER_SIZE 8192
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
     AppState* state = SDL_calloc(1, sizeof(AppState));
@@ -29,7 +29,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
     }
 
     // Load .wav file
-    const char* wav_path = "assets/wav_sample1.wav";
+    const char* wav_path = "assets/440.wav";
     SDL_AudioSpec wav_spec;
     Uint8* wav_data = NULL;
     Uint32 wav_data_len = 0;
