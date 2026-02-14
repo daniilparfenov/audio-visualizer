@@ -28,8 +28,13 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
         return SDL_APP_FAILURE;
     }
 
+    // Turn on VSync
+    if (!SDL_SetRenderVSync(state->renderer, 1)) {
+        SDL_Log("Couldn't set vsync: %s", SDL_GetError());
+    }
+
     // Load .wav file
-    const char* wav_path = "assets/440.wav";
+    const char* wav_path = "./assets/wav_sample2.wav";
     SDL_AudioSpec wav_spec;
     Uint8* wav_data = NULL;
     Uint32 wav_data_len = 0;
