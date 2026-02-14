@@ -94,6 +94,7 @@ SDL_AppResult SDL_AppIterate(void* appstate) {
     SDL_RenderClear(state->renderer);
 
     FeedAudio(state);
+    DrawWaveform(state);
 
     SDL_RenderPresent(state->renderer);
 
