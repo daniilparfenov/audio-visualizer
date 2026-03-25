@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 4.0.0)
 project(MusicVisualizer C)
 
 # set the output directory for built objects.
@@ -16,3 +16,6 @@ target_include_directories(MusicVisualizer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/i
 
 # Link to the actual SDL3 library.
 target_link_libraries(MusicVisualizer PRIVATE SDL3::SDL3)
+
+add_subdirectory(fft)
+target_link_libraries(MusicVisualizer PRIVATE fftLib)
