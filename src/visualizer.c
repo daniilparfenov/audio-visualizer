@@ -39,19 +39,28 @@ void DrawWaveform(AppState* state) {
     int search_start_idx = (state->ring_buffer_idx + state->ring_buffer_len - (samples_to_draw + search_range)) % state->ring_buffer_len;
     int trigger_idx = FindTriggerPoint(state, search_start_idx, samples_to_draw / 2);
 
-    // Pre-calculate first point to draw
+    // Samples buffer to display
+    static float display_buffer[8192] = {0};
+    if (samples_to_draw > 8192)
+        samples_to_draw = 8192;
+
+    // Linear interpolation
+    float smooth_factor = 0.15f;
+    for (int i = 0; i < samples_to_draw; i++) {
+        int sample_idx = (trigger_idx + i) % state->ring_buffer_len;
+        float target_sample = state->ring_buffer[sample_idx];
+
+        display_buffer[i] += (target_sample - display_buffer[i]) * smooth_factor;
+    }
+
+    // Pre-calculate first point to draw using smoothed buffer
     float prev_x, prev_y;
     prev_x = 0;
-    {
-        float sample = state->ring_buffer[trigger_idx];
-        prev_y = center_y - (int)(sample * amplitude);
-    }
+    prev_y = center_y - (int)(display_buffer[0] * amplitude);
 
     // Draw the samples starting from the trigger to avoid jitter
     for (int i = 0; i < samples_to_draw; i++) {
-        int sample_idx = (trigger_idx + i) % state->ring_buffer_len;
-
-        float sample = state->ring_buffer[sample_idx];
+        float sample = display_buffer[i];
 
         float x = i;
         float y = center_y - (int)(sample * amplitude);
