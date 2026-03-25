@@ -6,6 +6,9 @@ add_library(fftLib STATIC
     src/dft.c
 )
 
+# Link with std libm
+target_link_libraries(fftLib PRIVATE m)
+
 # Add target headers
 target_include_directories(fftLib PUBLIC include)
 
