@@ -44,3 +44,17 @@ void rfft_magnitudes(const float* input, float* output_magnitudes, size_t N) {
 
     free(z);
 }
+
+void apply_hamming_window(float* signal, size_t N) {
+    if (N == 0 || N == 1)
+        return;
+
+    const float alpha = 0.54f;
+    const float beta = 0.46f;
+    float phase_step = 2.0f * (float)M_PI / (float)(N - 1);
+
+    for (size_t i = 0; i < N; ++i) {
+        float window_multiplier = alpha - beta * cosf((float)i * phase_step);
+        signal[i] *= window_multiplier;
+    }
+}

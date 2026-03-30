@@ -24,4 +24,8 @@ void fft(Complex* data, size_t N);
 // Output array size: N / 2
 void rfft_magnitudes(const float* input, float* output_magnitudes, size_t N);
 
+// Applies a Hamming window to a real-valued signal buffer in-place.
+// Input/Output: signal (array of N floats)
+void apply_hamming_window(float* signal, size_t N);
+
 #endif  // FFT_H
