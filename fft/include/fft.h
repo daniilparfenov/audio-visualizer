@@ -19,4 +19,9 @@ void dft(const Complex* input, Complex* output, size_t N);
 // Fast Fourier transform, O(NlogN), N is the power of two
 void fft(Complex* data, size_t N);
 
+// Returns the array of frequency magnitudes
+// Input array size: N (the power of two)
+// Output array size: N / 2
+void rfft_magnitudes(const float* input, float* output_magnitudes, size_t N);
+
 #endif  // FFT_H

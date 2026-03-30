@@ -4,6 +4,7 @@ project(FFTLibrary C)
 add_library(fftLib STATIC
     src/fft.c
     src/dft.c
+    src/rfft.c
 )
 
 # Link with std libm
@@ -24,3 +25,6 @@ target_link_libraries(bench_fft PRIVATE fftLib)
 
 add_executable(bench_dft benchmarks/bench_dft.c)
 target_link_libraries(bench_dft PRIVATE fftLib)
+
+add_executable(bench_rfft benchmarks/bench_rfft.c)
+target_link_libraries(bench_rfft PRIVATE fftLib)

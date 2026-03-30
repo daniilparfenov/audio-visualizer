@@ -7,7 +7,7 @@
 
 #define SNR_THRESHOLD 80.0f
 #define ABS_THRESHOLD 0.0001f
-#define DEBUG_LOG
+// #define DEBUG_LOG
 
 static int all_test_passed = 1;
 
@@ -37,7 +37,23 @@ static void generate_rand_complex(Complex* signal, size_t N) {
     }
 }
 
-// Calculates Signal-to-Noise Ratio (SNR) in dB
+// Fills array of float numbers with random data
+static void generate_rand_float(float* signal, size_t N) {
+    time_t seed = time(NULL);
+    srand(seed);
+
+#if defined(DEBUG_LOG)
+    printf("srand seed = %ld\n", seed);
+#endif
+
+    float mn = -10.0f;
+    float mx = 10.0f;
+    for (size_t i = 0; i < N; ++i) {
+        signal[i] = mn + ((float)rand() / (float)RAND_MAX) * (mx - mn);
+    }
+}
+
+// Calculates Signal-to-Noise Ratio (SNR) for Complex arrays in dB
 static float calculate_snr(const Complex* ref, const Complex* test, size_t N) {
     float signal_power = 0.0f;
     float noise_power = 0.0f;
@@ -60,6 +76,26 @@ static float calculate_snr(const Complex* ref, const Complex* test, size_t N) {
     }
 
     // Return SNR in dB
+    return 10.0f * log10f(signal_power / noise_power);
+}
+
+// Calculates Signal-to-Noise Ratio (SNR) for float arrays in dB
+static float calculate_snr_float(const float* ref, const float* test, size_t len) {
+    float signal_power = 0.0f;
+    float noise_power = 0.0f;
+
+    for (size_t i = 0; i < len; ++i) {
+        float ref_val = ref[i];
+        float diff = ref_val - test[i];
+
+        signal_power += ref_val * ref_val;
+        noise_power += diff * diff;
+    }
+
+    if (noise_power == 0.0f) {
+        return INFINITY;
+    }
+
     return 10.0f * log10f(signal_power / noise_power);
 }
 
@@ -118,14 +154,13 @@ static void test_fft(void) {
 
     float SNR = calculate_snr(dft_out, fft_in_out, N);
     if (SNR < SNR_THRESHOLD) {
-        printf("FAILED: test_fft with SNR = %f\n", SNR);
+        printf("FAILED: test_fft with SNR = %.2f\n", SNR);
         all_test_passed = 0;
     } else {
-        printf("PASSED: test_fft\n");
+        printf("PASSED: test_fft (SNR: %.2f dB)\n", SNR);
     }
 
 #if defined(DEBUG_LOG)
-    // Print output (spectrum): peaks should be in the freq and N - freq index.
     for (size_t i = 0; i < N; ++i) {
         float re = dft_out[i].re;
         float im = dft_out[i].im;
@@ -144,10 +179,64 @@ static void test_fft(void) {
     free(dft_out);
 }
 
+static void test_rfft_magnitudes(void) {
+    // Generate random real signal
+    size_t N = 1024;
+    size_t half_N = N / 2;
+    float* real_signal = malloc(N * sizeof(float));
+    generate_rand_float(real_signal, N);
+
+    // Output arrays of freq magnitudes
+    float* rfft_freq_magnitudes = malloc(half_N * sizeof(float));
+    float* dft_freq_magnitudes = malloc(half_N * sizeof(float));
+
+    // Pack real signal as complex for DFT
+    Complex* dft_in = malloc(N * sizeof(Complex));
+    Complex* dft_out = malloc(N * sizeof(Complex));
+    for (size_t i = 0; i < N; ++i) {
+        dft_in[i].re = real_signal[i];
+        dft_in[i].im = 0.0f;
+    }
+
+    // Run DFT and RFFT
+    dft(dft_in, dft_out, N);
+    rfft_magnitudes(real_signal, rfft_freq_magnitudes, N);
+
+    // Calc freq magnitudes from DFT output
+    for (size_t i = 0; i < half_N; i++) {
+        dft_freq_magnitudes[i] = sqrtf(dft_out[i].re * dft_out[i].re + dft_out[i].im * dft_out[i].im);
+    }
+
+    // Compare results
+    float SNR = calculate_snr_float(dft_freq_magnitudes, rfft_freq_magnitudes, half_N);
+    if (SNR < SNR_THRESHOLD) {
+        printf("FAILED: test_rfft_magnitudes with SNR = %f\n", SNR);
+        all_test_passed = 0;
+    } else {
+        printf("PASSED: test_rfft_magnitudes (SNR: %.2f dB)\n", SNR);
+    }
+
+#if defined(DEBUG_LOG)
+    for (size_t i = 0; i < half_N; ++i) {
+        float dft_mag = dft_freq_magnitudes[i];
+        float rfft_mag = rfft_freq_magnitudes[i];
+        float diff = fabs(dft_mag - rfft_mag);
+        printf("%zu) DFT_mag RFFT_mag Diff: %f %f %f\n", i, dft_mag, rfft_mag, diff);
+    }
+#endif  // defined(DEBUG_LOG)
+
+    free(real_signal);
+    free(rfft_freq_magnitudes);
+    free(dft_freq_magnitudes);
+    free(dft_in);
+    free(dft_out);
+}
+
 int main() {
 
     test_dft();
     test_fft();
+    test_rfft_magnitudes();
 
     if (all_test_passed) {
         printf("All tests passed!\n");
