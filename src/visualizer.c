@@ -39,31 +39,28 @@ void DrawWaveform(AppState* state, const SDL_FRect* canvas) {
 
     // Find a trigger
     int search_range = samples_to_draw / 2;
-    int search_start_idx = (state->ring_buffer_idx + state->ring_buffer_len - (samples_to_draw + search_range)) % state->ring_buffer_len;
+    int search_start_idx =
+        (state->ring_buffer_idx + state->ring_buffer_len - (samples_to_draw + search_range)) % state->ring_buffer_len;
     int trigger_idx = FindTriggerPoint(state, search_start_idx, samples_to_draw / 2);
-
-    // Samples buffer to display
-    static float display_buffer[8192] = {0};
-    if (samples_to_draw > 8192)
-        samples_to_draw = 8192;
 
     // Linear interpolation
     float smooth_factor = 0.15f;
+    float* wave_smoothed = state->vis_ctx.wave_smoothed;
     for (int i = 0; i < samples_to_draw; i++) {
         int sample_idx = (trigger_idx + i) % state->ring_buffer_len;
         float target_sample = state->ring_buffer[sample_idx];
 
-        display_buffer[i] += (target_sample - display_buffer[i]) * smooth_factor;
+        wave_smoothed[i] += (target_sample - wave_smoothed[i]) * smooth_factor;
     }
 
     // Pre-calculate first point to draw using smoothed buffer
     float prev_x, prev_y;
     prev_x = 0;
-    prev_y = center_y - (int)(display_buffer[0] * amplitude);
+    prev_y = center_y - (int)(wave_smoothed[0] * amplitude);
 
     // Draw the samples starting from the trigger to avoid jitter
     for (int i = 0; i < samples_to_draw; i++) {
-        float sample = display_buffer[i];
+        float sample = wave_smoothed[i];
 
         float x = i;
         float y = center_y - (int)(sample * amplitude);
@@ -82,7 +79,7 @@ void DrawSpectrum(AppState* state, const SDL_FRect* canvas) {
         return;
 
     // Fill FFT buffer with last FFT_SIZE samples from ring buffer
-    static float audio_frame[FFT_SIZE] = {0};
+    float audio_frame[FFT_SIZE] = {0};
     int start_idx = (state->ring_buffer_idx + state->ring_buffer_len - FFT_SIZE) % state->ring_buffer_len;
     for (int i = 0; i < FFT_SIZE; i++) {
         int idx = (start_idx + i) % state->ring_buffer_len;
@@ -94,16 +91,16 @@ void DrawSpectrum(AppState* state, const SDL_FRect* canvas) {
 
     // Get freq magnitudes
     int num_bins = FFT_SIZE / 2;
-    static float magnitudes[FFT_SIZE / 2] = {0};
+    float magnitudes[FFT_SIZE / 2] = {0};
     rfft_magnitudes(audio_frame, magnitudes, FFT_SIZE);
 
     // Normalization and smoothing the amplitudes
-    static float smoothed_magnitudes[FFT_SIZE / 2] = {0};
     const float smooth_up_factor = 0.8f;
     const float smooth_down_factor = 0.1f;
     const float min_db = -60.0f;
     const float max_db = 0.0f;
     const float db_range = max_db - min_db;
+    float* pSpectrum_smoothed = state->vis_ctx.spectrum_smoothed;
     for (int i = 0; i < num_bins; i++) {
         float normalized_mag = magnitudes[i] / (FFT_SIZE / 2.0f);
         float db = 20.0f * log10f(normalized_mag + 1e-6f);
@@ -115,10 +112,10 @@ void DrawSpectrum(AppState* state, const SDL_FRect* canvas) {
             target_value = 1.0f;
 
         // Interpolation
-        if (target_value > smoothed_magnitudes[i]) {
-            smoothed_magnitudes[i] += (target_value - smoothed_magnitudes[i]) * smooth_up_factor;
+        if (target_value > pSpectrum_smoothed[i]) {
+            pSpectrum_smoothed[i] += (target_value - pSpectrum_smoothed[i]) * smooth_up_factor;
         } else {
-            smoothed_magnitudes[i] += (target_value - smoothed_magnitudes[i]) * smooth_down_factor;
+            pSpectrum_smoothed[i] += (target_value - pSpectrum_smoothed[i]) * smooth_down_factor;
         }
     }
 
@@ -131,7 +128,7 @@ void DrawSpectrum(AppState* state, const SDL_FRect* canvas) {
     SDL_SetRenderDrawColor(state->renderer, 0, 200, 255, 255);
 
     for (int i = start_bin; i < end_bin; i++) {
-        const float normalized_mag = smoothed_magnitudes[i];
+        const float normalized_mag = pSpectrum_smoothed[i];
 
         const float bar_height = normalized_mag * max_bar_height;
 

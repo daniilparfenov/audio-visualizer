@@ -48,3 +48,72 @@ void FeedAudio(AppState* state) {
         samples_fed += chunk_size;
     }
 }
+
+SDL_AppResult Audio_LoadAndSetup(AppState* state, const char* filepath) {
+    SDL_AudioSpec wav_spec;
+    Uint8* wav_data = NULL;
+    Uint32 wav_data_len = 0;
+
+    // Load .wav file
+    if (!SDL_LoadWAV(filepath, &wav_spec, &wav_data, &wav_data_len)) {
+        SDL_Log("Couldn't load .wav file: %s", SDL_GetError());
+        return SDL_APP_FAILURE;
+    }
+
+    // Convert audio to floats
+    SDL_AudioSpec target_spec = wav_spec;
+    target_spec.format = SDL_AUDIO_F32;
+
+    Uint8* converted_data = NULL;
+    int converted_len = 0;
+    if (!SDL_ConvertAudioSamples(&wav_spec, wav_data, wav_data_len, &target_spec, &converted_data, &converted_len)) {
+        SDL_Log("Failed to convert audio samples: %s", SDL_GetError());
+        SDL_free(wav_data);
+        return SDL_APP_FAILURE;
+    }
+
+    // Store converted data in our AppState
+    state->samples = (float*)converted_data;
+    state->samples_count = converted_len / sizeof(float);  // Total floats (samples * channels)
+    state->sample_rate = target_spec.freq;
+    state->channels = target_spec.channels;
+    state->cur_sample_idx = 0;
+
+    // Free original raw data
+    SDL_free(wav_data);
+
+    // Setup Ring Buffer
+    state->ring_buffer_len = RING_BUFFER_SIZE;
+    state->ring_buffer = SDL_calloc(state->ring_buffer_len, sizeof(float));
+    state->ring_buffer_idx = 0;
+
+    // Create AudioStream that mathes converted format (F32)
+    state->stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &target_spec, NULL, NULL);
+    if (!state->stream) {
+        SDL_Log("Couldn't create audio stream: %s", SDL_GetError());
+        return SDL_APP_FAILURE;
+    }
+
+    // Resume audio (because SDL starts the device paused)
+    SDL_ResumeAudioStreamDevice(state->stream);
+
+    return SDL_APP_CONTINUE;
+}
+
+void Audio_Cleanup(AppState* state) {
+    if (!state)
+        return;
+
+    if (state->stream) {
+        SDL_DestroyAudioStream(state->stream);
+        state->stream = NULL;
+    }
+    if (state->samples) {
+        SDL_free(state->samples);
+        state->samples = NULL;
+    }
+    if (state->ring_buffer) {
+        SDL_free(state->ring_buffer);
+        state->ring_buffer = NULL;
+    }
+}
