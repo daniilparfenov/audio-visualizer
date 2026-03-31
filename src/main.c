@@ -6,8 +6,7 @@
 #include "app_state.h"
 #include "audio_utils.h"
 #include "visualizer.h"
-
-#define RING_BUFFER_SIZE 8192
+#include "window_utils.h"
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
     AppState* state = SDL_calloc(1, sizeof(AppState));
@@ -16,26 +15,26 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
     }
     *appstate = state;
 
+    // Default app configuration
+    state->config.window_title = "Music Visualizer";
+    state->config.window_w = 1280;
+    state->config.window_h = 720;
+    state->config.vsync = 1;
+    state->config.audio_filepath = "./assets/wav_sample1.wav";
+
     // Initialization of SDL subsystems
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
         SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
 
-    // Create Window + Renderer
-    if (!SDL_CreateWindowAndRenderer("Music Visualizer", 800, 600, 0, &state->window, &state->renderer)) {
-        SDL_Log("Couldn't create window and renderer: %s", SDL_GetError());
+    // Init window
+    if (Window_Init(state) != SDL_APP_CONTINUE) {
         return SDL_APP_FAILURE;
     }
 
-    // Turn on VSync
-    if (!SDL_SetRenderVSync(state->renderer, 1)) {
-        SDL_Log("Couldn't set vsync: %s", SDL_GetError());
-    }
-
-    // Load .wav file
-    const char* wav_path = "./assets/wav_sample2.wav";
-    if (Audio_LoadAndSetup(state, wav_path) != SDL_APP_CONTINUE) {
+    // Load and setup audio
+    if (Audio_LoadAndSetup(state, state->config.audio_filepath) != SDL_APP_CONTINUE) {
         return SDL_APP_FAILURE;
     }
 
@@ -107,15 +106,7 @@ void SDL_AppQuit(void* appstate, SDL_AppResult result) {
     AppState* state = (AppState*)appstate;
     if (state) {
         Audio_Cleanup(state);
-
-        if (state->renderer) {
-            SDL_DestroyRenderer(state->renderer);
-        }
-
-        if (state->window) {
-            SDL_DestroyWindow(state->window);
-        }
-
+        Window_Cleanup(state);
         SDL_free(state);
     }
 }

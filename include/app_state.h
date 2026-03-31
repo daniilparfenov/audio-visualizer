@@ -10,6 +10,14 @@ typedef enum {
     VISUALIZER_MODE_COUNT          //
 } VisualizerMode;
 
+typedef struct AppConfig {
+    const char* window_title;
+    int window_w;
+    int window_h;
+    int vsync;
+    const char* audio_filepath;
+} AppConfig;
+
 typedef struct AppState {
     SDL_Window* window;
     SDL_Renderer* renderer;
@@ -33,6 +41,9 @@ typedef struct AppState {
 
     // Visualizer Mode
     VisualizerMode vis_mode;
+
+    // App configuration
+    AppConfig config;
 } AppState;
 
 #endif  // #ifndef APP_STATE_H
