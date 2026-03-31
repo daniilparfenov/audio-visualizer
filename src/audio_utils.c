@@ -49,8 +49,6 @@ void FeedAudio(AppState* state) {
     }
 }
 
-#define RING_BUFFER_SIZE 8192
-
 SDL_AppResult Audio_LoadAndSetup(AppState* state, const char* filepath) {
     SDL_AudioSpec wav_spec;
     Uint8* wav_data = NULL;
