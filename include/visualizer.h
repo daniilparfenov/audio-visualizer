@@ -5,4 +5,6 @@
 
 void DrawWaveform(AppState* state);
 
+void DrawSpectrum(AppState* state);
+
 #endif  // #ifndef VISUALIZER_H
