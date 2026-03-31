@@ -58,11 +58,18 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event) {
     if (event->type == SDL_EVENT_KEY_DOWN) {
         if (event->key.key == SDLK_ESCAPE) {
             return SDL_APP_SUCCESS;
-        } else if (event->key.key == SDLK_SPACE) {
+        } else if (event->key.key == SDLK_UP) {
             state->vis_mode = (state->vis_mode + 1) % VISUALIZER_MODE_COUNT;
             SDL_Log("Switched visualizer mode to: %d", state->vis_mode);
-        } else if (event->key.key == SDLK_P) {
+        } else if (event->key.key == SDLK_DOWN) {
+            state->vis_mode = (state->vis_mode - 1 + VISUALIZER_MODE_COUNT) % VISUALIZER_MODE_COUNT;
+            SDL_Log("Switched visualizer mode to: %d", state->vis_mode);
+        } else if (event->key.key == SDLK_SPACE) {
             Player_TogglePause(state);
+} else if (event->key.key == SDLK_LEFT) {
+            Player_SeekSeconds(state, -5.0f);
+        } else if (event->key.key == SDLK_RIGHT) {
+            Player_SeekSeconds(state, 5.0f);
         }
     }
 

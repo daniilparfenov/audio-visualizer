@@ -7,4 +7,7 @@ void Player_Init(AppState* state);
 
 void Player_TogglePause(AppState* state);
 
+// Seek by the specified number of seconds (can be negative)
+void Player_SeekSeconds(AppState* state, float seconds);
+
 #endif  // PLAYER_H
