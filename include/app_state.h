@@ -28,6 +28,7 @@ typedef struct VisContext {
 
 typedef struct PlayerState {
     int is_playing;
+    int is_looping;
 } PlayerState;
 
 typedef struct AppState {

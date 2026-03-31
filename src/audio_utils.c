@@ -35,10 +35,18 @@ void FeedAudio(AppState* state) {
             chunk_size = remaining_samples_in_file;
         }
 
-        // If the file is ended, loop the audio
+        // If the file is ended, loop the audio or end playback
         if (chunk_size == 0) {
-            state->cur_sample_idx = 0;
-            continue;
+            if (state->player.is_looping) {
+                state->cur_sample_idx = 0;
+                continue;
+            } else {
+                state->cur_sample_idx = state->samples_count;
+                state->player.is_playing = 0;
+                SDL_PauseAudioStreamDevice(state->stream);
+                SDL_Log("Player: Reached end of file, playback stopped.");
+                break;
+            }
         }
 
         // Put audio into the stream

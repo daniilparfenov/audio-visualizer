@@ -70,6 +70,8 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event) {
             Player_SeekSeconds(state, -5.0f);
         } else if (event->key.key == SDLK_RIGHT) {
             Player_SeekSeconds(state, 5.0f);
+        } else if (event->key.key == SDLK_L) {
+            Player_ToggleLoop(state);
         }
     }
 
