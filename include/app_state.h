@@ -3,6 +3,13 @@
 
 #include <SDL3/SDL.h>
 
+typedef enum {
+    VISUALIZER_MODE_WAVEFORM = 0,  //
+    VISUALIZER_MODE_SPECTRUM = 1,  //
+    VISUALIZER_MODE_BOTH = 2,      //
+    VISUALIZER_MODE_COUNT          //
+} VisualizerMode;
+
 typedef struct AppState {
     SDL_Window* window;
     SDL_Renderer* renderer;
@@ -23,6 +30,9 @@ typedef struct AppState {
     float* ring_buffer;
     Uint32 ring_buffer_len;
     Uint32 ring_buffer_idx;  // Current write position in ring buffer
+
+    // Visualizer Mode
+    VisualizerMode vis_mode;
 } AppState;
 
 #endif  // #ifndef APP_STATE_H

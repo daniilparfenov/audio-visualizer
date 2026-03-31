@@ -23,20 +23,19 @@ static int FindTriggerPoint(AppState* state, int search_start_idx, int search_le
     return search_start_idx;
 }
 
-void DrawWaveform(AppState* state) {
-    int window_w, window_h;
-    if (!SDL_GetRenderOutputSize(state->renderer, &window_w, &window_h))
+void DrawWaveform(AppState* state, const SDL_FRect* canvas) {
+    if (!canvas)
         return;
 
     // The color of wave - Green
     SDL_SetRenderDrawColor(state->renderer, 0, 255, 0, 255);
 
     // Wave position and amplitude
-    int center_y = window_h / 2;
-    float amplitude = window_h / 2.5f;
+    float center_y = canvas->y + (canvas->h / 2.0f);
+    float amplitude = canvas->h / 2.5f;
 
     // The number of samples to draw
-    int samples_to_draw = SDL_min(window_w, state->ring_buffer_len);
+    int samples_to_draw = SDL_min((int)canvas->w, state->ring_buffer_len);
 
     // Find a trigger
     int search_range = samples_to_draw / 2;
@@ -78,9 +77,8 @@ void DrawWaveform(AppState* state) {
 
 #define FFT_SIZE 1024
 
-void DrawSpectrum(AppState* state) {
-    int window_w, window_h;
-    if (!SDL_GetRenderOutputSize(state->renderer, &window_w, &window_h))
+void DrawSpectrum(AppState* state, const SDL_FRect* canvas) {
+    if (!canvas)
         return;
 
     // Fill FFT buffer with last FFT_SIZE samples from ring buffer
@@ -128,8 +126,8 @@ void DrawSpectrum(AppState* state) {
     int start_bin = 1;
     int end_bin = num_bins / 2;  // We will not draw the highest frequencies, because there is usually no music
     int display_bins = end_bin - start_bin;
-    float bar_width = (float)window_w / (float)display_bins;
-    float max_bar_height = (float)window_h / 2.0f;
+    float bar_width = (float)canvas->w / (float)display_bins;
+    float max_bar_height = (float)canvas->h / 2.0f;
     SDL_SetRenderDrawColor(state->renderer, 0, 200, 255, 255);
 
     for (int i = start_bin; i < end_bin; i++) {
@@ -138,8 +136,8 @@ void DrawSpectrum(AppState* state) {
         const float bar_height = normalized_mag * max_bar_height;
 
         SDL_FRect bar_rect;
-        bar_rect.x = i * bar_width;
-        bar_rect.y = (window_h / 2) - bar_height;
+        bar_rect.x = canvas->x + (i * bar_width);
+        bar_rect.y = (canvas->y + canvas->h) - bar_height;
         bar_rect.w = bar_width > 1.0f ? bar_width - 1.0f : 1.0f;  // 1px gap between bars
         bar_rect.h = bar_height;
 

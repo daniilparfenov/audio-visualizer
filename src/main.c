@@ -80,10 +80,15 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
     // Resume audio (because SDL starts the device paused)
     SDL_ResumeAudioStreamDevice(state->stream);
 
+    // Setup visualizer mode
+    state->vis_mode = VISUALIZER_MODE_SPECTRUM;
+
     return SDL_APP_CONTINUE;
 }
 
 SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event) {
+AppState* state = (AppState*)appstate;
+
     if (event->type == SDL_EVENT_QUIT) {
         return SDL_APP_SUCCESS;
     }
@@ -91,6 +96,9 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event) {
     if (event->type == SDL_EVENT_KEY_DOWN) {
         if (event->key.key == SDLK_ESCAPE) {
             return SDL_APP_SUCCESS;
+} else if (event->key.key == SDLK_SPACE) {
+            state->vis_mode = (state->vis_mode + 1) % VISUALIZER_MODE_COUNT;
+            SDL_Log("Switched visualizer mode to: %d", state->vis_mode);
         }
     }
 
@@ -104,8 +112,32 @@ SDL_AppResult SDL_AppIterate(void* appstate) {
     SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255);
     SDL_RenderClear(state->renderer);
 
+// Feed audio from buffer
     FeedAudio(state);
-    DrawWaveform(state);
+    
+    int window_w, window_h;
+    SDL_GetRenderOutputSize(state->renderer, &window_w, &window_h);
+
+    // Areas for rendering
+    SDL_FRect full_screen = {0, 0, (float)window_w, (float)window_h};
+    SDL_FRect top_half = {0, 0, (float)window_w, (float)window_h / 2.0f};
+    SDL_FRect bottom_half = {0, (float)window_h / 2.0f, (float)window_w, (float)window_h / 2.0f};
+
+    // Visualization
+    switch (state->vis_mode) {
+        case VISUALIZER_MODE_WAVEFORM:
+            DrawWaveform(state, &full_screen);
+break;
+        case VISUALIZER_MODE_SPECTRUM:
+            DrawSpectrum(state, &full_screen);
+            break;
+        case VISUALIZER_MODE_BOTH:
+            DrawWaveform(state, &top_half);
+            DrawSpectrum(state, &bottom_half);
+            break;
+        default:
+            break;
+    }
 
     SDL_RenderPresent(state->renderer);
 
