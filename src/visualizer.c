@@ -99,29 +99,43 @@ void DrawSpectrum(AppState* state) {
     static float magnitudes[FFT_SIZE / 2] = {0};
     rfft_magnitudes(audio_frame, magnitudes, FFT_SIZE);
 
-    // Smoothing the amplitudes
+    // Normalization and smoothing the amplitudes
     static float smoothed_magnitudes[FFT_SIZE / 2] = {0};
-    float smooth_factor = 0.3f;
+    const float smooth_up_factor = 0.8f;
+    const float smooth_down_factor = 0.1f;
+    const float min_db = -60.0f;
+    const float max_db = 0.0f;
+    const float db_range = max_db - min_db;
     for (int i = 0; i < num_bins; i++) {
-        if (magnitudes[i] > smoothed_magnitudes[i])
-            smoothed_magnitudes[i] = magnitudes[i];
-        else
-            smoothed_magnitudes[i] += (magnitudes[i] - smoothed_magnitudes[i]) * smooth_factor;
+        float normalized_mag = magnitudes[i] / (FFT_SIZE / 2.0f);
+        float db = 20.0f * log10f(normalized_mag + 1e-6f);
+
+        float target_value = (db - min_db) / db_range;
+        if (target_value < 0.0f)
+            target_value = 0.0f;
+        if (target_value > 1.0f)
+            target_value = 1.0f;
+
+        // Interpolation
+        if (target_value > smoothed_magnitudes[i]) {
+            smoothed_magnitudes[i] += (target_value - smoothed_magnitudes[i]) * smooth_up_factor;
+        } else {
+            smoothed_magnitudes[i] += (target_value - smoothed_magnitudes[i]) * smooth_down_factor;
+        }
     }
 
     // Rendering configuration
-    int start_bin = 0;
+    int start_bin = 1;
     int end_bin = num_bins / 2;  // We will not draw the highest frequencies, because there is usually no music
     int display_bins = end_bin - start_bin;
     float bar_width = (float)window_w / (float)display_bins;
+    float max_bar_height = (float)window_h / 2.0f;
     SDL_SetRenderDrawColor(state->renderer, 0, 200, 255, 255);
 
     for (int i = start_bin; i < end_bin; i++) {
-        float mag = smoothed_magnitudes[i];
+        const float normalized_mag = smoothed_magnitudes[i];
 
-        float bar_height = mag * 2.0f;
-        if (bar_height > window_h)
-            bar_height = window_h;
+        const float bar_height = normalized_mag * max_bar_height;
 
         SDL_FRect bar_rect;
         bar_rect.x = i * bar_width;
