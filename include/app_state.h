@@ -5,6 +5,7 @@
 
 #define RING_BUFFER_SIZE 8192
 #define FFT_SIZE 1024
+#define MAX_PLAYLIST_SONGS 32
 
 typedef enum {
     VISUALIZER_MODE_WAVEFORM = 0,  //
@@ -29,6 +30,11 @@ typedef struct VisContext {
 typedef struct PlayerState {
     int is_playing;
     int is_looping;
+
+    // Playlist
+    const char* playlist[MAX_PLAYLIST_SONGS];  // Array of file paths
+    int playlist_count;                        // The number of songs in the playlist
+    int current_song_idx;                      // Index of currently playing song
 } PlayerState;
 
 typedef struct AppState {

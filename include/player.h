@@ -13,4 +13,11 @@ void Player_SeekSeconds(AppState* state, float seconds);
 // Toggle the looping mode
 void Player_ToggleLoop(AppState* state);
 
+// Toggle the song
+void Player_NextSong(AppState* state);
+void Player_PrevSong(AppState* state);
+
+// Load the song from the playlist
+SDL_AppResult Player_LoadSongIdx(AppState* state, int idx);
+
 #endif  // PLAYER_H

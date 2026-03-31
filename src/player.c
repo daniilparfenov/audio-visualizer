@@ -1,4 +1,5 @@
 #include "player.h"
+#include "audio_utils.h"
 
 void Player_Init(AppState* state) {
     if (!state)
@@ -6,6 +7,11 @@ void Player_Init(AppState* state) {
 
     state->player.is_playing = 1;
     state->player.is_looping = 1;
+
+    // Hardcode next songs so far
+    state->player.playlist[0] = state->config.audio_filepath;
+    state->player.playlist_count = 1;
+    state->player.current_song_idx = 0;
 }
 
 void Player_TogglePause(AppState* state) {
@@ -77,4 +83,48 @@ void Player_ToggleLoop(AppState* state) {
 
     state->player.is_looping = !state->player.is_looping;
     SDL_Log("Player: Looping is now %s", state->player.is_looping ? "ON" : "OFF");
+}
+
+SDL_AppResult Player_LoadSongIdx(AppState* state, int idx) {
+    if (!state || idx < 0 || idx >= state->player.playlist_count)
+        return SDL_APP_FAILURE;
+
+    // Pause Audio stream
+    SDL_PauseAudioStreamDevice(state->stream);
+
+    // Clean buffers
+    Audio_Cleanup(state);
+    SDL_memset(&state->vis_ctx, 0, sizeof(VisContext));
+
+    // Load new song
+    const char* new_song_path = state->player.playlist[idx];
+    if (Audio_LoadAndSetup(state, new_song_path) != SDL_APP_CONTINUE) {
+        SDL_Log("Player: Failed to load next song: %s", new_song_path);
+        return SDL_APP_FAILURE;
+    }
+    state->player.current_song_idx = idx;
+
+    // Pause the song if the previous one was paused
+    if (!state->player.is_playing) {
+        SDL_PauseAudioStreamDevice(state->stream);
+    }
+
+    SDL_Log("Player: Now playing [%d]: %s", idx, new_song_path);
+    return SDL_APP_CONTINUE;
+}
+
+void Player_NextSong(AppState* state) {
+    if (!state || state->player.playlist_count <= 1)
+        return;
+
+    int next_idx = (state->player.current_song_idx + 1) % state->player.playlist_count;
+    Player_LoadSongIdx(state, next_idx);
+}
+
+void Player_PrevSong(AppState* state) {
+    if (!state || state->player.playlist_count <= 1)
+        return;
+
+    int prev_idx = (state->player.current_song_idx - 1 + state->player.playlist_count) % state->player.playlist_count;
+    Player_LoadSongIdx(state, prev_idx);
 }
