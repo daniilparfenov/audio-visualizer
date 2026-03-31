@@ -26,6 +26,10 @@ typedef struct VisContext {
     float spectrum_smoothed[FFT_SIZE / 2];
 } VisContext;
 
+typedef struct PlayerState {
+    int is_playing;
+} PlayerState;
+
 typedef struct AppState {
     SDL_Window* window;
     SDL_Renderer* renderer;
@@ -55,6 +59,9 @@ typedef struct AppState {
 
     // Visualization cache
     VisContext vis_ctx;
+
+    // Player - structure to control audio playback by the user
+    PlayerState player;
 } AppState;
 
 #endif  // #ifndef APP_STATE_H

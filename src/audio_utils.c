@@ -1,6 +1,15 @@
 #include "audio_utils.h"
 
 void FeedAudio(AppState* state) {
+    if (!state || !state->stream) {
+        return;
+    }
+
+    // Don't feed the stream if playback is paused
+    if (!state->player.is_playing) {
+        return;
+    }
+
     const int MIN_BUFFERED_BYTES = 32768;
     int queued_bytes = SDL_GetAudioStreamAvailable(state->stream);
 

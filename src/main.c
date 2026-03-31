@@ -5,6 +5,7 @@
 
 #include "app_state.h"
 #include "audio_utils.h"
+#include "player.h"
 #include "visualizer.h"
 #include "window_utils.h"
 
@@ -38,6 +39,9 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
         return SDL_APP_FAILURE;
     }
 
+    // Init player
+    Player_Init(state);
+
     // Setup visualizer mode
     state->vis_mode = VISUALIZER_MODE_WAVEFORM;
 
@@ -57,6 +61,8 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event) {
         } else if (event->key.key == SDLK_SPACE) {
             state->vis_mode = (state->vis_mode + 1) % VISUALIZER_MODE_COUNT;
             SDL_Log("Switched visualizer mode to: %d", state->vis_mode);
+        } else if (event->key.key == SDLK_P) {
+            Player_TogglePause(state);
         }
     }
 
