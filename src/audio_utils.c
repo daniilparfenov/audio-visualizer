@@ -1,7 +1,7 @@
 #include "audio_utils.h"
 
 void FeedAudio(AppState* state) {
-    const int MIN_BUFFERED_BYTES = 8192;
+    const int MIN_BUFFERED_BYTES = 32768;
     int queued_bytes = SDL_GetAudioStreamAvailable(state->stream);
 
     // If there are more bytes in the stream than we need, we don't need to feed the stream
