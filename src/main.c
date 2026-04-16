@@ -89,6 +89,12 @@ SDL_AppResult SDL_AppIterate(void* appstate) {
     SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255);
     SDL_RenderClear(state->renderer);
 
+    // Auto-switching of songs
+    if (state->player.wants_next_song) {
+        state->player.wants_next_song = 0;
+        Player_NextSong(state);
+    }
+
     // Feed audio from buffer
     FeedAudio(state);
 

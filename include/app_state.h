@@ -30,6 +30,7 @@ typedef struct VisContext {
 typedef struct PlayerState {
     int is_playing;
     int is_looping;
+    int wants_next_song;
 
     // Playlist
     const char* playlist[MAX_PLAYLIST_SONGS];  // Array of file paths
