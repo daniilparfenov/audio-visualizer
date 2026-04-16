@@ -1,6 +1,15 @@
 #include "audio_utils.h"
 
 void FeedAudio(AppState* state) {
+    if (!state || !state->stream) {
+        return;
+    }
+
+    // Don't feed the stream if playback is paused
+    if (!state->player.is_playing) {
+        return;
+    }
+
     const int MIN_BUFFERED_BYTES = 32768;
     int queued_bytes = SDL_GetAudioStreamAvailable(state->stream);
 
@@ -26,10 +35,23 @@ void FeedAudio(AppState* state) {
             chunk_size = remaining_samples_in_file;
         }
 
-        // If the file is ended, loop the audio
+        // If the file is ended, loop the audio, 
+        // report a song switch (if a song queue exists) or end playback
         if (chunk_size == 0) {
-            state->cur_sample_idx = 0;
-            continue;
+            if (state->player.is_looping) {
+                state->cur_sample_idx = 0;
+                continue;
+            } else {
+                if (state->player.playlist_count > 1) {
+                    state->player.wants_next_song = 1;
+                } else {
+                    state->cur_sample_idx = state->samples_count;
+                    state->player.is_playing = 0;
+                    SDL_PauseAudioStreamDevice(state->stream);
+                    SDL_Log("Player: Reached end of playlist, playback stopped.");
+                }
+                break;
+            }
         }
 
         // Put audio into the stream
