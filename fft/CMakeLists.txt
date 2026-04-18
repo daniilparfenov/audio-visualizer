@@ -8,7 +8,9 @@ add_library(fftLib STATIC
 )
 
 # Link with std libm
-target_link_libraries(fftLib PRIVATE m)
+if(NOT WIN32)
+    target_link_libraries(fftLib PRIVATE m)
+endif()
 
 # Add target headers
 target_include_directories(fftLib PUBLIC include)
