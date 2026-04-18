@@ -15,10 +15,15 @@ add_executable(MusicVisualizer
     src/visualizer.c
     src/audio_utils.c
     src/window_utils.c
-    src/player.c    
+    src/player.c
+    src/gui.c    
 )
 
-target_include_directories(MusicVisualizer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(MusicVisualizer PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendored/Nuklear
+    ${CMAKE_CURRENT_SOURCE_DIR}/vendored/Nuklear/demo/sdl3_renderer
+)
 
 # Link to the actual SDL3 library.
 target_link_libraries(MusicVisualizer PRIVATE SDL3::SDL3)

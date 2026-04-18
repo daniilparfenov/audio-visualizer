@@ -20,4 +20,7 @@ void Player_PrevSong(AppState* state);
 // Load the song from the playlist
 SDL_AppResult Player_LoadSongIdx(AppState* state, int idx);
 
+// Remove the song from the playlist
+void Player_RemoveSongIdx(AppState* state, int idx);
+
 #endif  // PLAYER_H

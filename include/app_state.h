@@ -3,6 +3,8 @@
 
 #include <SDL3/SDL.h>
 
+#include "gui.h"
+
 #define RING_BUFFER_SIZE 8192
 #define FFT_SIZE 1024
 #define MAX_PLAYLIST_SONGS 32
@@ -19,7 +21,6 @@ typedef struct AppConfig {
     int window_w;
     int window_h;
     int vsync;
-    const char* audio_filepath;
 } AppConfig;
 
 typedef struct VisContext {
@@ -70,6 +71,12 @@ typedef struct AppState {
 
     // Player - structure to control audio playback by the user
     PlayerState player;
+
+    // Nuklear context
+    struct nk_context* nk_ctx;
+
+    // GUI states
+    int show_playlist;
 } AppState;
 
 #endif  // #ifndef APP_STATE_H

@@ -24,7 +24,7 @@ static int FindTriggerPoint(AppState* state, int search_start_idx, int search_le
 }
 
 void DrawWaveform(AppState* state, const SDL_FRect* canvas) {
-    if (!canvas)
+    if (!canvas || !state->ring_buffer || state->ring_buffer_len == 0)
         return;
 
     // The color of wave - Green
@@ -75,7 +75,7 @@ void DrawWaveform(AppState* state, const SDL_FRect* canvas) {
 #define FFT_SIZE 1024
 
 void DrawSpectrum(AppState* state, const SDL_FRect* canvas) {
-    if (!canvas)
+    if (!canvas || !state->ring_buffer || state->ring_buffer_len == 0)
         return;
 
     // Fill FFT buffer with last FFT_SIZE samples from ring buffer

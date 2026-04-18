@@ -5,13 +5,10 @@ void Player_Init(AppState* state) {
     if (!state)
         return;
 
-    state->player.is_playing = 1;
-    state->player.is_looping = 1;
-
-    // Hardcode next songs so far
-    state->player.playlist[0] = state->config.audio_filepath;
-    state->player.playlist_count = 1;
-    state->player.current_song_idx = 0;
+    state->player.is_playing = 0;
+    state->player.is_looping = 0;
+    state->player.playlist_count = 0;
+    state->player.current_song_idx = -1;
 }
 
 void Player_TogglePause(AppState* state) {
@@ -127,4 +124,34 @@ void Player_PrevSong(AppState* state) {
 
     int prev_idx = (state->player.current_song_idx - 1 + state->player.playlist_count) % state->player.playlist_count;
     Player_LoadSongIdx(state, prev_idx);
+}
+
+void Player_RemoveSongIdx(AppState* state, int idx) {
+    if (!state || idx < 0 || idx >= state->player.playlist_count)
+        return;
+
+    // In case of deleting of current playing song
+    if (idx == state->player.current_song_idx) {
+        state->player.is_playing = 0;
+        if (state->stream) {
+            SDL_PauseAudioStreamDevice(state->stream);
+        }
+        state->player.current_song_idx = -1;
+        Audio_Cleanup(state);
+    }
+
+    // Free memory for the song filepath
+    SDL_free((void*)state->player.playlist[idx]);
+
+    // Moving the remaining tracks to the left
+    for (int i = idx; i < state->player.playlist_count - 1; ++i) {
+        state->player.playlist[i] = state->player.playlist[i + 1];
+    }
+
+    state->player.playlist_count--;
+
+    // Adjusting the index of the current song if it has moved
+    if (state->player.current_song_idx > idx) {
+        state->player.current_song_idx--;
+    }
 }
