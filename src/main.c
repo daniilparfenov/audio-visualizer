@@ -35,8 +35,14 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
         return SDL_APP_FAILURE;
     }
 
-    // Init player
+    // Init Audio Mixer
+    if (Audio_Init(state) != SDL_APP_CONTINUE) {
+        return SDL_APP_FAILURE;
+    }
+
+    // Init player and load state
     Player_Init(state);
+    Player_LoadState(state);
 
     // Setup visualizer mode
     state->vis_mode = VISUALIZER_MODE_WAVEFORM;
@@ -148,6 +154,9 @@ SDL_AppResult SDL_AppIterate(void* appstate) {
 void SDL_AppQuit(void* appstate, SDL_AppResult result) {
     AppState* state = (AppState*)appstate;
     if (state) {
+        // Save player state
+        Player_SaveState(state);
+
         // free Nuklear state
         if (state->nk_ctx) {
             nk_sdl_shutdown(state->nk_ctx);

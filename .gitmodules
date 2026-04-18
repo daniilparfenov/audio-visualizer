@@ -4,3 +4,6 @@
 [submodule "vendored/Nuklear"]
 	path = vendored/Nuklear
 	url = https://github.com/Immediate-Mode-UI/Nuklear.git
+[submodule "vendored/SDL_mixer"]
+	path = vendored/SDL_mixer
+	url = https://github.com/libsdl-org/SDL_mixer.git

@@ -62,8 +62,8 @@ static void GUI_DrawPlaylist(AppState* state, float width, float height) {
         if (nk_button_label(state->nk_ctx, "+ Add Track")) {
             // File filters
             static const SDL_DialogFileFilter audio_filters[] = {
-                {"Audio files", "wav"},  //
-                {"All files", "*"}       //
+                {"Audio files", "wav;mp3;flac;ogg"},  //
+                {"All files", "*"}                    //
             };
             SDL_ShowOpenFileDialog(OnFileSelected, state, NULL, audio_filters, 2, NULL, true);
         }

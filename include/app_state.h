@@ -2,6 +2,7 @@
 #define APP_STATE_H
 
 #include <SDL3/SDL.h>
+#include <SDL3_mixer/SDL_mixer.h>
 
 #include "gui.h"
 
@@ -43,11 +44,10 @@ typedef struct AppState {
     SDL_Window* window;
     SDL_Renderer* renderer;
 
-    // Audio stream
-    SDL_AudioStream* stream;
-
-    // Main audio data (loaded file)
-    float* samples;        // Full audio data in Float32 format
+    // Main audio data
+    MIX_Mixer* mixer;
+    MIX_Audio* audio;
+    MIX_Track* track;
     Uint32 samples_count;  // Total number of samples
     int sample_rate;
     int channels;

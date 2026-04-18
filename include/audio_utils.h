@@ -4,6 +4,8 @@
 #include <SDL3/SDL.h>
 #include "app_state.h"
 
+SDL_AppResult Audio_Init(AppState* state);
+
 void FeedAudio(AppState* state);
 
 SDL_AppResult Audio_LoadAndSetup(AppState* state, const char* filepath);
