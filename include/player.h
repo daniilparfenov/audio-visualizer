@@ -23,10 +23,4 @@ SDL_AppResult Player_LoadSongIdx(AppState* state, int idx);
 // Remove the song from the playlist
 void Player_RemoveSongIdx(AppState* state, int idx);
 
-// Save player state to file (playlist, current track, etc.)
-void Player_SaveState(AppState* state);
-
-// Load player state from file
-void Player_LoadState(AppState* state);
-
 #endif  // PLAYER_H

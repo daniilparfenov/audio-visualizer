@@ -45,6 +45,96 @@ static const char* GetFileName(const char* filepath) {
     return filepath;
 }
 
+static void GUI_DrawSettings(AppState* state, float x, float width, float height) {
+    struct nk_rect settings_bounds = nk_rect(x, 0, width, height);
+
+    //  Set semi-transparent background
+    nk_style_push_style_item(state->nk_ctx, &state->nk_ctx->style.window.fixed_background,
+                             nk_style_item_color(nk_rgba(30, 30, 30, 150)));
+
+    if (nk_begin(state->nk_ctx, "Settings", settings_bounds,
+                 NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_BACKGROUND)) {
+
+        // --- Waveform Section ---
+        if (nk_tree_push(state->nk_ctx, NK_TREE_TAB, "Waveform", NK_MINIMIZED)) {
+            // Color
+            nk_layout_row_dynamic(state->nk_ctx, 120, 1);
+            state->vis_settings.wave_color = nk_color_picker(state->nk_ctx, state->vis_settings.wave_color, NK_RGBA);
+
+            // Smoothing
+            nk_layout_row_dynamic(state->nk_ctx, 20, 1);
+            char smooth_lbl[64];
+            snprintf(smooth_lbl, sizeof(smooth_lbl), "Smoothing: %.2f", state->vis_settings.wave_smoothing);
+            nk_label(state->nk_ctx, smooth_lbl, NK_TEXT_LEFT);
+            nk_layout_row_dynamic(state->nk_ctx, 30, 1);
+            nk_slider_float(state->nk_ctx, 0.01f, &state->vis_settings.wave_smoothing, 0.5f, 0.01f);
+
+            // Thickness
+            nk_layout_row_dynamic(state->nk_ctx, 20, 1);
+            char thick_lbl[64];
+            snprintf(thick_lbl, sizeof(thick_lbl), "Thickness: %.1f", state->vis_settings.wave_thickness);
+            nk_label(state->nk_ctx, thick_lbl, NK_TEXT_LEFT);
+            nk_layout_row_dynamic(state->nk_ctx, 30, 1);
+            nk_slider_float(state->nk_ctx, 1.0f, &state->vis_settings.wave_thickness, 20.0f, 1.0f);
+
+            // Amplitude
+            nk_layout_row_dynamic(state->nk_ctx, 20, 1);
+            char w_amp_lbl[64];
+            snprintf(w_amp_lbl, sizeof(w_amp_lbl), "Amplitude: %.2f", state->vis_settings.wave_amplitude);
+            nk_label(state->nk_ctx, w_amp_lbl, NK_TEXT_LEFT);
+            nk_layout_row_dynamic(state->nk_ctx, 30, 1);
+            nk_slider_float(state->nk_ctx, 0.1f, &state->vis_settings.wave_amplitude, 2.5f, 0.01f);
+
+            nk_tree_pop(state->nk_ctx);
+        }
+
+        // --- Spectrum Section ---
+        if (nk_tree_push(state->nk_ctx, NK_TREE_TAB, "Spectrum", NK_MINIMIZED)) {
+            // Color
+            nk_layout_row_dynamic(state->nk_ctx, 120, 1);
+            state->vis_settings.spectrum_color =
+                nk_color_picker(state->nk_ctx, state->vis_settings.spectrum_color, NK_RGBA);
+
+            // Smoothing Up
+            nk_layout_row_dynamic(state->nk_ctx, 20, 1);
+            char s_up_lbl[64];
+            snprintf(s_up_lbl, sizeof(s_up_lbl), "Smoothing Up: %.2f", state->vis_settings.spectrum_smooth_up);
+            nk_label(state->nk_ctx, s_up_lbl, NK_TEXT_LEFT);
+            nk_layout_row_dynamic(state->nk_ctx, 30, 1);
+            nk_slider_float(state->nk_ctx, 0.01f, &state->vis_settings.spectrum_smooth_up, 1.0f, 0.01f);
+
+            // Smoothing Down
+            nk_layout_row_dynamic(state->nk_ctx, 20, 1);
+            char s_down_lbl[64];
+            snprintf(s_down_lbl, sizeof(s_down_lbl), "Smoothing Down: %.2f", state->vis_settings.spectrum_smooth_down);
+            nk_label(state->nk_ctx, s_down_lbl, NK_TEXT_LEFT);
+            nk_layout_row_dynamic(state->nk_ctx, 30, 1);
+            nk_slider_float(state->nk_ctx, 0.01f, &state->vis_settings.spectrum_smooth_down, 1.0f, 0.01f);
+
+            // Amplitude
+            nk_layout_row_dynamic(state->nk_ctx, 20, 1);
+            char amp_lbl[64];
+            snprintf(amp_lbl, sizeof(amp_lbl), "Amplitude: %.2f", state->vis_settings.spectrum_amplitude);
+            nk_label(state->nk_ctx, amp_lbl, NK_TEXT_LEFT);
+            nk_layout_row_dynamic(state->nk_ctx, 30, 1);
+            nk_slider_float(state->nk_ctx, 0.1f, &state->vis_settings.spectrum_amplitude, 2.5f, 0.01f);
+
+            nk_tree_pop(state->nk_ctx);
+        }
+
+        // --- Background Section ---
+        if (nk_tree_push(state->nk_ctx, NK_TREE_TAB, "Background", NK_MINIMIZED)) {
+            // Color
+            nk_layout_row_dynamic(state->nk_ctx, 120, 1);
+            state->vis_settings.bg_color = nk_color_picker(state->nk_ctx, state->vis_settings.bg_color, NK_RGB);
+            nk_tree_pop(state->nk_ctx);
+        }
+    }
+    nk_end(state->nk_ctx);
+
+    // Pop window style (transparency)
+    nk_style_pop_style_item(state->nk_ctx);
+}
 static void GUI_DrawPlaylist(AppState* state, float width, float height) {
     struct nk_rect playlist_bounds = nk_rect(0, 0, width, height);
 
@@ -155,8 +245,8 @@ static void GUI_DrawBottomPanel(AppState* state, float window_w, float panel_hei
         // the X-coordinate for the entire group (it is centered in the window)
         const float start_x = ((float)window_w - group_width) / 2.0f;
 
-        // Enabling a layer with free widget positioning (7 buttons)
-        nk_layout_space_begin(state->nk_ctx, NK_STATIC, panel_height, 8);
+        // Enabling a layer with free widget positioning (9 buttons)
+        nk_layout_space_begin(state->nk_ctx, NK_STATIC, panel_height, 9);
 
         // --- Button 0. show/hide playlist ---
         nk_layout_space_push(state->nk_ctx, nk_rect(20.0f, center_y, 110.0f, btn_h));
@@ -208,15 +298,30 @@ static void GUI_DrawBottomPanel(AppState* state, float window_w, float panel_hei
             Player_NextSong(state);
         }
 
-        // --- Button 7. Loop ON/OFF button (Located at the right edge) ---
+        // Size settings for the right group of buttons (Looping and Settings)
         const float loop_btn_w = 90.0f;
-        nk_layout_space_push(state->nk_ctx, nk_rect((float)window_w - loop_btn_w - 20.0f, center_y, loop_btn_w, btn_h));
+        const float settings_btn_w = 80.0f;
+        const float right_spacing = 10.0f;  // Spacing between the buttons
+        const float right_margin = 20.0f;   // Margin from the right edge of the window
+
+        // --- Button 7. Loop ON/OFF button ---
+        float loop_x = (float)window_w - settings_btn_w - right_spacing - loop_btn_w - right_margin;
+        nk_layout_space_push(state->nk_ctx, nk_rect(loop_x, center_y, loop_btn_w, btn_h));
+
         const char* loop_label = state->player.is_looping ? "Loop: ON" : "Loop: OFF";
         if (nk_button_label(state->nk_ctx, loop_label)) {
             Player_ToggleLoop(state);
         }
 
-        // Disabling a layer with free widget positioning (6 buttons)
+        // --- Button 8. Settings ---
+        float settings_x = (float)window_w - settings_btn_w - right_margin;
+        nk_layout_space_push(state->nk_ctx, nk_rect(settings_x, center_y, settings_btn_w, btn_h));
+
+        if (nk_button_label(state->nk_ctx, "Settings")) {
+            state->show_settings = !state->show_settings;
+        }
+
+        // Disabling a layer with free widget positioning
         nk_layout_space_end(state->nk_ctx);
     }
     nk_end(state->nk_ctx);
@@ -230,6 +335,7 @@ void GUI_Draw(AppState* state, float* out_vis_x, float* out_vis_y, float* out_vi
     // Default GUI and visualization size
     const float panel_height = 60.0f;
     const float playlist_width = 250.0f;
+    const float settings_width = 250.0f;
     float vis_height = (float)window_h - panel_height;
 
     // The base coordinates of the visualization (the entire screen except the bottom panel)
@@ -241,6 +347,12 @@ void GUI_Draw(AppState* state, float* out_vis_x, float* out_vis_y, float* out_vi
     // Drawing a tracklist (if it is open)
     if (state->show_playlist) {
         GUI_DrawPlaylist(state, playlist_width, vis_height);
+    }
+
+    // Drawing settings (if it is open)
+    if (state->show_settings) {
+
+        GUI_DrawSettings(state, (float)window_w - settings_width, settings_width, (float)vis_height);
     }
 
     // Drawing the bottom panel

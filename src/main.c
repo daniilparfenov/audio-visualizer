@@ -40,12 +40,11 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
         return SDL_APP_FAILURE;
     }
 
-    // Init player and load state
+    // Init player
     Player_Init(state);
-    Player_LoadState(state);
 
-    // Setup visualizer mode
-    state->vis_mode = VISUALIZER_MODE_WAVEFORM;
+    // Loading saved settings
+    AppState_Load(state);
 
     // Nuklear initialization
     state->nk_ctx = nk_sdl_init(state->window, state->renderer, nk_sdl_allocator());
@@ -106,8 +105,11 @@ SDL_AppResult SDL_AppIterate(void* appstate) {
     float vis_x, vis_y, vis_w, vis_h;
     GUI_Draw(state, &vis_x, &vis_y, &vis_w, &vis_h);
 
-    // Clear the screen with black color
-    SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255);
+    // Clear the screen with color from settings
+    SDL_SetRenderDrawBlendMode(state->renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(state->renderer, (Uint8)(state->vis_settings.bg_color.r * 255),
+                           (Uint8)(state->vis_settings.bg_color.g * 255), (Uint8)(state->vis_settings.bg_color.b * 255),
+                           255);
     SDL_RenderClear(state->renderer);
 
     // Auto-switching of songs
@@ -154,8 +156,8 @@ SDL_AppResult SDL_AppIterate(void* appstate) {
 void SDL_AppQuit(void* appstate, SDL_AppResult result) {
     AppState* state = (AppState*)appstate;
     if (state) {
-        // Save player state
-        Player_SaveState(state);
+        // Save the whole application state
+        AppState_Save(state);
 
         // free Nuklear state
         if (state->nk_ctx) {

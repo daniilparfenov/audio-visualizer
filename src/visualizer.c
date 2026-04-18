@@ -27,12 +27,19 @@ void DrawWaveform(AppState* state, const SDL_FRect* canvas) {
     if (!canvas || !state->ring_buffer || state->ring_buffer_len == 0)
         return;
 
-    // The color of wave - Green
-    SDL_SetRenderDrawColor(state->renderer, 0, 255, 0, 255);
+    // Enabling clipping to avoid drawing outside the canvas
+    SDL_Rect clip_rect = {(int)canvas->x, (int)canvas->y, (int)canvas->w, (int)canvas->h};
+    SDL_SetRenderClipRect(state->renderer, &clip_rect);
+
+    // The color of wave
+    SDL_SetRenderDrawColor(state->renderer, (Uint8)(state->vis_settings.wave_color.r * 255.0f),
+                           (Uint8)(state->vis_settings.wave_color.g * 255.0f),
+                           (Uint8)(state->vis_settings.wave_color.b * 255.0f),
+                           (Uint8)(state->vis_settings.wave_color.a * 255.0f));
 
     // Wave position and amplitude
     float center_y = canvas->y + (canvas->h / 2.0f);
-    float amplitude = canvas->h / 2.5f;
+    float amplitude = (canvas->h / 2.5f) * state->vis_settings.wave_amplitude;
 
     // The number of samples to draw
     int samples_to_draw = SDL_min((int)canvas->w, state->ring_buffer_len);
@@ -44,7 +51,7 @@ void DrawWaveform(AppState* state, const SDL_FRect* canvas) {
     int trigger_idx = FindTriggerPoint(state, search_start_idx, samples_to_draw / 2);
 
     // Linear interpolation
-    float smooth_factor = 0.15f;
+    float smooth_factor = state->vis_settings.wave_smoothing;
     float* wave_smoothed = state->vis_ctx.wave_smoothed;
     for (int i = 0; i < samples_to_draw; i++) {
         int sample_idx = (trigger_idx + i) % state->ring_buffer_len;
@@ -58,6 +65,9 @@ void DrawWaveform(AppState* state, const SDL_FRect* canvas) {
     prev_x = 0;
     prev_y = center_y - (int)(wave_smoothed[0] * amplitude);
 
+    // Get half the thickness of the target line to draw several offset lines
+    float half_thick = state->vis_settings.wave_thickness / 2.0f;
+
     // Draw the samples starting from the trigger to avoid jitter
     for (int i = 0; i < samples_to_draw; i++) {
         float sample = wave_smoothed[i];
@@ -65,11 +75,17 @@ void DrawWaveform(AppState* state, const SDL_FRect* canvas) {
         float x = i;
         float y = center_y - (int)(sample * amplitude);
 
-        SDL_RenderLine(state->renderer, prev_x, prev_y, x, y);
+        // Simulate the thickness of the line by drawing several "layers" with a Y offset.F
+        for (float t = -half_thick; t <= half_thick; t += 1.0f) {
+            SDL_RenderLine(state->renderer, prev_x, prev_y + t, x, y + t);
+        }
 
         prev_x = x;
         prev_y = y;
     }
+
+    // Disabling clipping
+    SDL_SetRenderClipRect(state->renderer, NULL);
 }
 
 #define FFT_SIZE 1024
@@ -77,6 +93,10 @@ void DrawWaveform(AppState* state, const SDL_FRect* canvas) {
 void DrawSpectrum(AppState* state, const SDL_FRect* canvas) {
     if (!canvas || !state->ring_buffer || state->ring_buffer_len == 0)
         return;
+
+    // Enabling clipping to avoid drawing outside the canvas
+    SDL_Rect clip_rect = {(int)canvas->x, (int)canvas->y, (int)canvas->w, (int)canvas->h};
+    SDL_SetRenderClipRect(state->renderer, &clip_rect);
 
     // Fill FFT buffer with last FFT_SIZE samples from ring buffer
     float audio_frame[FFT_SIZE] = {0};
@@ -95,8 +115,8 @@ void DrawSpectrum(AppState* state, const SDL_FRect* canvas) {
     rfft_magnitudes(audio_frame, magnitudes, FFT_SIZE);
 
     // Normalization and smoothing the amplitudes
-    const float smooth_up_factor = 0.8f;
-    const float smooth_down_factor = 0.1f;
+    const float smooth_up_factor = state->vis_settings.spectrum_smooth_up;
+    const float smooth_down_factor = state->vis_settings.spectrum_smooth_down;
     const float min_db = -60.0f;
     const float max_db = 0.0f;
     const float db_range = max_db - min_db;
@@ -124,8 +144,11 @@ void DrawSpectrum(AppState* state, const SDL_FRect* canvas) {
     int end_bin = num_bins / 2;  // We will not draw the highest frequencies, because there is usually no music
     int display_bins = end_bin - start_bin;
     float bar_width = (float)canvas->w / (float)display_bins;
-    float max_bar_height = (float)canvas->h / 2.0f;
-    SDL_SetRenderDrawColor(state->renderer, 0, 200, 255, 255);
+    float max_bar_height = ((float)canvas->h / 2.0f) * state->vis_settings.spectrum_amplitude;
+    SDL_SetRenderDrawColor(state->renderer, (Uint8)(state->vis_settings.spectrum_color.r * 255.0f),
+                           (Uint8)(state->vis_settings.spectrum_color.g * 255.0f),
+                           (Uint8)(state->vis_settings.spectrum_color.b * 255.0f),
+                           (Uint8)(state->vis_settings.spectrum_color.a * 255.0f));
 
     for (int i = start_bin; i < end_bin; i++) {
         const float normalized_mag = pSpectrum_smoothed[i];
@@ -140,4 +163,7 @@ void DrawSpectrum(AppState* state, const SDL_FRect* canvas) {
 
         SDL_RenderFillRect(state->renderer, &bar_rect);
     }
+
+    // Disabling clipping
+    SDL_SetRenderClipRect(state->renderer, NULL);
 }

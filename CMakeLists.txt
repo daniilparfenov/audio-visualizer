@@ -20,6 +20,7 @@ add_executable(MusicVisualizer
     src/window_utils.c
     src/player.c
     src/gui.c
+    src/app_state.c
 )
 
 target_include_directories(MusicVisualizer PRIVATE

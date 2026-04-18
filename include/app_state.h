@@ -29,6 +29,23 @@ typedef struct VisContext {
     float spectrum_smoothed[FFT_SIZE / 2];
 } VisContext;
 
+typedef struct VisSettings {
+    // Waveform
+    struct nk_colorf wave_color;
+    float wave_smoothing;
+    float wave_thickness;
+    float wave_amplitude;
+
+    // Spectrum
+    struct nk_colorf spectrum_color;
+    float spectrum_smooth_up;
+    float spectrum_smooth_down;
+    float spectrum_amplitude;
+
+    // General
+    struct nk_colorf bg_color;
+} VisSettings;
+
 typedef struct PlayerState {
     int is_playing;
     int is_looping;
@@ -66,8 +83,9 @@ typedef struct AppState {
     // App configuration
     AppConfig config;
 
-    // Visualization cache
+    // Visualization cache and settings
     VisContext vis_ctx;
+    VisSettings vis_settings;
 
     // Player - structure to control audio playback by the user
     PlayerState player;
@@ -77,6 +95,12 @@ typedef struct AppState {
 
     // GUI states
     int show_playlist;
+    int show_settings;
+
 } AppState;
+
+void AppState_Save(AppState* state);
+
+void AppState_Load(AppState* state);
 
 #endif  // #ifndef APP_STATE_H
